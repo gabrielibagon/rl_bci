@@ -24,41 +24,46 @@ class FlankerTask():
 		info = StreamInfo('MarkerStream','Markers',1, 0,'string','markerstream')
 		self.outlet = StreamOutlet(info)
 		self.markers = ['Correct','Incorrect']
-
 		# start task
+		pygame.display.toggle_fullscreen()
 		self.start_task()
+
 
 
 	def start_task(self):
 		options = [pygame.K_LEFT, pygame.K_RIGHT]
-		while True:
-			pygame.event.set_blocked(pygame.KEYDOWN)
+		clock = pygame.time.Clock()
+		count=0
+		self.outlet.push_sample(['Start'])
+		while count<20:
 			self.screen.fill(BLACK)	
 			pygame.display.flip()
 			time.sleep(1)
+			
 			direction = self.draw_arrows()
 			pygame.display.flip()
-			timeout = time.time() + 2
-			pygame.event.get()
+			pygame.event.set_allowed(None)
 			pygame.event.set_allowed(pygame.KEYDOWN)
-			while time.time() < timeout:
-				pygame.event.clear()
-				event = pygame.event.poll()
-				# print(event)
-				if event.type == pygame.KEYDOWN and event.key in options:
-					print("TEST")
-					if event.key == pygame.K_LEFT:
-						user_input = 1
-					elif event.key == pygame.K_RIGHT:
-						user_input = 0
-					if user_input == direction:
-						print(self.markers[0])
-						self.outlet.push_sample([self.markers[0]])
-					elif user_input == (direction ^ 1):
-						print(self.markers[1])
-						self.outlet.push_sample([self.markers[1]])
-					pygame.event.set_blocked(pygame.KEYDOWN)
-					break;	
+			pygame.event.clear(pygame.KEYDOWN)
+			event = pygame.event.wait()
+			pygame.event.set_blocked(pygame.KEYDOWN)
+			print(event)
+			if event.type == pygame.KEYDOWN and event.key in options:
+				if event.key == pygame.K_LEFT:
+					user_input = 1
+				elif event.key == pygame.K_RIGHT:
+					user_input = 0
+				if user_input == direction:
+					print(self.markers[0])
+					self.outlet.push_sample([self.markers[0]])
+				elif user_input == (direction ^ 1):
+					print(self.markers[1])
+					self.outlet.push_sample([self.markers[1]])
+				pygame.event.set_blocked(pygame.KEYDOWN)
+				count+=1
+			pygame.event.pump()
+		self.outlet.push_sample(['End'])
+
 
 	def draw_arrows(self):
 		stim_type = randint(0,2) 		# arrow group incongruent, congruent, or neutral
