@@ -21,13 +21,12 @@ class FlankerTask():
 		clock = pygame.time.Clock()
 
 		# LSL setup
-		info_button = StreamInfo('button_presses','Markers',1, 0,'string','markerstream')
-		info_correct = StreamInfo('correctness','Markers',1, 0,'string','markerstream')
-		self.outlet_button = StreamOutlet(info_button)
-		self.outlet_correct = StreamOutlet(info_correct)
+		info = StreamInfo('response','Markers',1, 0,'string','markerstream')
+		self.outlet = StreamOutlet(info)
 		self.markers = ['Correct','Incorrect']
 		# start task
-		self.start_task()
+		for i in range(4):
+			self.start_task()
 
 
 
@@ -35,7 +34,7 @@ class FlankerTask():
 		options = [pygame.K_LEFT, pygame.K_RIGHT]
 		clock = pygame.time.Clock()
 		count=0
-		while count<20:
+		while count<50:
 			self.screen.fill(BLACK)	
 			pygame.display.flip()
 			time.sleep(1)
@@ -47,7 +46,7 @@ class FlankerTask():
 			pygame.event.clear(pygame.KEYDOWN)
 			event = pygame.event.wait()
 			pygame.event.set_blocked(pygame.KEYDOWN)
-			self.outlet_button.push_sample(['Button'])
+			print(event)
 			if event.type == pygame.KEYDOWN and event.key in options:
 				if event.key == pygame.K_LEFT:
 					user_input = 1
@@ -55,10 +54,10 @@ class FlankerTask():
 					user_input = 0
 				if user_input == direction:
 					print(self.markers[0])
-					self.outlet_correct.push_sample([self.markers[0]])
+					self.outlet.push_sample([self.markers[0]])
 				elif user_input == (direction ^ 1):
 					print(self.markers[1])
-					self.outlet_correct.push_sample([self.markers[0]])
+					self.outlet.push_sample([self.markers[1]])
 				pygame.event.set_blocked(pygame.KEYDOWN)
 				count+=1
 			pygame.event.pump()
