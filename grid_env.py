@@ -10,6 +10,7 @@ TODO
 import pygame
 import random
 import time
+import numpy as np
 from pylsl import StreamInlet, StreamOutlet,StreamInfo,resolve_stream
 
 # COLOR
@@ -71,20 +72,20 @@ class GridNavigate():
     # the direction to move (in the form of (x,y) change in coordinates) and the 
     # probability of selecting this action. i.e.: [(dx,dy), probability]
     # The initial probabilities are set to .25
-
+    init_prob = 1.0/8.0
+    print(init_prob)
     self.actions = [
-        ((0,-1), .125),   #North
-        ((1,-1), .125),   #NorthEast
-        ((-1,-1), .125),  #NorthWest
-        ((0,1), .125),    #South
-        ((1,1), .125),    #SouthEast
-        ((-1,1), .125),   #SouthWest
-        ((1,0),.125),     #East
-        ((-1,0),.125)     #West
-    ]
+        [(0,-1), init_prob],   #North
+        [(1,-1), init_prob],   #NorthEast
+        [(1,0), init_prob],     #East
+        [(1,1), init_prob],    #SouthEast
+        [(0,1), init_prob],    #South
+        [(-1,1), init_prob],   #SouthWest
+        [(-1,0), init_prob],     #West
+        [(-1,-1), init_prob]  #NorthWest
+     ]
+
     self.vector = [0.0]
-
-
     # Initialize the task
     pygame.init()
     self.run_loop()
@@ -105,12 +106,12 @@ class GridNavigate():
     num_step = 1                  # temporarily make step always 1
     # INITIALIZE GRID
     self.draw_grid(agent_pos,goal_pos)
-    time.sleep(1)
-
+    #time.sleep(.1)
+ 
     # FIRST MOVE
     pos_t0 = agent_pos
     agent_pos, idx_action = self.move_agent(agent_pos)
-
+    steps = 1
     # MAIN LOOP
     while not DONE:
       pos_t1 = agent_pos
@@ -127,10 +128,22 @@ class GridNavigate():
       # RECEIVE FEEDBACK
       # while feedback is None:
       #  feedback,timestamp = self.feedback_inlet.pull_sample()
-      tmp_feedback = ['correct'] * 8 +['incorrect'] * 2
-      feedback = random.choice(tmp_feedback)
       ########## COMMENT OUT FOR DEBUGGING ############
-
+      waiting = True
+      pygame.event.clear()
+      while waiting:
+        events = pygame.event.get()
+        for event in events:
+          if event.type == pygame.KEYDOWN:
+            if event.key == pygame.K_RIGHT:
+              print('correct')
+              waiting = False
+              feedback = 'correct'
+            elif event.key == pygame.K_LEFT:
+              print('incorrect')
+              waiting = False
+              feedback = 'incorrect'
+      pygame.event.clear()
       # UPDATE ACTION TABLE
       self.update_action_table(feedback,pos_t0,pos_t1,idx_action,num_step)
 
@@ -138,13 +151,15 @@ class GridNavigate():
       if agent_pos == goal_pos:
         print("DONE")
         DONE = True
-
+        break
       # UPDATE AGENT POSITION
       pos_t0 = agent_pos
       agent_pos,idx_action = self.move_agent(agent_pos)
       # PAUSE BEFORE NEXT LOOP
-      time.sleep(1)
-  
+      #time.sleep(.1)
+      steps+=1
+    print(steps)
+    return(steps)
   def draw_grid(self,agent_pos,goal_pos):
     for row in range(self.dim):
       for column in range(self.dim):
@@ -174,79 +189,57 @@ class GridNavigate():
          This is to allow fine tuning of actions as the object moves closer to its target.
 
     '''
-    # if feedback == 'correct':
-    #  for i,a in enumerate(self.actions):
-    #    if a[0] == action:
-    #      self.actions[i] = (self.actions[i][0],self.actions[i][1]+.10)
-    #      if i == 0:
-    #        j = 1;
-    #      elif i ==1:
-    #        j = 0;
-    #      elif i == 2:
-    #        j = 3
-    #      elif i == 3:
-    #        j = 2
-    #      self.actions[i] = (self.actions[j][0],self.actions[j][1]-.10)
-    
-    alpha = .15 / self.dim
-    reward = num_step * alpha    
-    harsh_punishment = -1*num_step * alpha / 2
-    reg_punishment = harsh_punishment / 2
-    print(idx_action)
+    effect = .15
+    n = .5
+    #print(idx_action)
     if feedback == 'correct':
-      # reward correct action
-      self.actions[idx_action] = (self.actions[idx_action][0],self.actions[idx_action][1]+reward)
-      # punish incorrect action
-      for i in range(len(self.actions)):
-        if i != idx_action:
-          if idx_action/2 and i/2:
-            self.actions[i]= (self.actions[i][0],self.actions[i][1]+harsh_punishment)
-          else: 
-            self.actions[i]= (self.actions[i][0],self.actions[i][1]+reg_punishment)
-    elif feedback == 'incorrect':
-       # reward correct action
-      self.actions[idx_action] = (self.actions[idx_action][0],self.actions[idx_action][1]+harsh_punishment)
-      # punish incorrect action
-      for i in range(len(self.actions)):
-        if i != idx_action:
-          if idx_action/2 and i/2:
-            self.actions[i]= (self.actions[i][0],self.actions[i][1]+reward)
-          else: 
-            self.actions[i]= (self.actions[i][0],self.actions[i][1]+reg_punishment)      
-    print(self.actions)
+      c = 1
+    else:
+      c = -1
+    self.print_action_table()
+    # reward or punish correct action
+    self.actions[idx_action][1] = self.actions[idx_action][1]+ (effect * c)
+    # reward or punish neighboring actions
+    idx_neighbor = (idx_action+1)%8
+    self.actions[idx_neighbor][1] = self.actions[idx_neighbor][1]+(effect * c * n) 
+    idx_neighbor = (idx_action-1)%8
+    self.actions[idx_neighbor][1] = self.actions[idx_neighbor][1]+(effect * c * n)
+    # reward or punish opposite action
+    anti_idx = (idx_action+4) % 8
+    self.actions[anti_idx][1] = self.actions[anti_idx][1]+(effect * -1 * c)
+    anti_neighbor = (anti_idx+1) % 8
+    # reward or punish neighboring actions
+    self.actions[anti_neighbor][1] = self.actions[anti_neighbor][1] + (effect * -1 * c * n)
+    anti_neighbor = (anti_idx-1) % 8
+    self.actions[anti_neighbor][1] = self.actions[anti_neighbor][1] + (effect * -1 *  c * n)
+    self.print_action_table()
 
-
-
+  def print_action_table(self):
+    action_list = ['north','northeast','east','southeast','south','southwest','west','northwest'] 
     
-
+    prob_sum =0
+    for idx,action in enumerate(self.actions):
+      print(action_list[idx], action[1])
+      prob_sum+=action[1]
+    print(prob_sum)
   def move_agent(self,agent_pos):
     decision = []
     decision[:] = self.actions
-    print(decision)
-    print(len(decision))
     if agent_pos[0] == 0:
-      del decision[2]
-      del decision[4]
-      del decision[5]
+      del decision[5:]
     elif agent_pos[0] == (self.dim-1):
-      del decision[1]
-      del decision[3]
-      del decision[4]
+      del decision[1:4]
     if agent_pos[1] == 0:
-      del decision[0]
-      del decision[0]
-      del decision[0]
+      del decision[0:2]
+      del decision[5]
     elif agent_pos[1] == (self.dim-1):
       if (agent_pos[0] == 0):
-        del decision[2]
-        del decision[2]
+        del decision[3:]
       elif agent_pos[0] == (self.dim-1):
-        del decision[2]
-        del decision[2]
+        del decision[1:3]
+        del decision[1]
       else:
-        del decision[3]
-        del decision[3]
-        del decision[3]
+        del decision[3:6]
 
     weighted_decision = []
     # weight random selection
@@ -275,6 +268,6 @@ class GridNavigate():
 
 if __name__ == '__main__':
   gn = GridNavigate(6)
-
+  
 
 
