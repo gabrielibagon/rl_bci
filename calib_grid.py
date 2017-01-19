@@ -36,10 +36,10 @@ class CalibGrid():
     # ------
     # Set up the window, screen, and clock
 
-    self.screen = pygame.display.set_mode([WIDTH, HEIGHT])
+    self.screen = pygame.display.set_mode([600, 600])
     self.clock = pygame.time.Clock()
     pygame.display.set_caption("TRAINING")
-    self.square_length = 200
+    self.square_length = 100
     self.margin = 10
     #
     # LABSTREAMINGLAYER
@@ -80,6 +80,7 @@ class CalibGrid():
 
     # Initialize the task
     pygame.init()
+    pygame.transform.scale(self.screen, (400,400))
     self.run_loop()
 
   def run_loop(self):
@@ -102,17 +103,18 @@ class CalibGrid():
       time.sleep(2)
 
       # SELECT MOVE
-      action_idx = random.randint(0,3)
+      p = [.1,.1,.1,.1]
+      p[correct_idx] = .70
+      action_idx = np.random.choice(4,1,p=p)
+      # action_idx = random.randint(0,3)
       action = self.actions[action_idx]
 
       # MOVE AGENT
       print(action)
-      print("DAEWEWR")
       self.draw_square(1,1,WHITE)
       self.draw_square(1+action[0],1+action[1],RED)
 
       pygame.display.flip()
-      
       # SEND MARKER
       if action_idx == correct_idx:
         self.outlet_correct.push_sample(['Correct'])
@@ -124,7 +126,6 @@ class CalibGrid():
       time.sleep(2)
       self.draw_square(1+action[0],1+action[1],WHITE)
       self.draw_target(correct_idx,erase=True)
-      print('daw')
       pygame.display.flip()
       time.sleep(1)
 
@@ -142,10 +143,10 @@ class CalibGrid():
     pygame.display.flip()
   
   def draw_target(self,dir_idx,erase=False):
-    NORTH = [210,0,620,200]
-    EAST = [740,210,200,620]
-    SOUTH = [210,740,620,200]
-    WEST = [0,210,200,620]
+    NORTH = [135,25,320,75]
+    EAST = [465,110,75,320]
+    SOUTH = [135,440,320,75]
+    WEST = [50,110,75,320]
     directions = [NORTH,EAST,SOUTH,WEST]
     if not erase:
       color = GREEN
@@ -158,8 +159,8 @@ class CalibGrid():
   def draw_square(self,x,y,color):
     pygame.draw.rect(self.screen,
                      color,
-                     [200+(self.margin + self.square_length) * x + self.margin,
-                      200+(self.margin + self.square_length) * y + self.margin,
+                     [125+(self.margin + self.square_length) * x + self.margin,
+                      100+(self.margin + self.square_length) * y + self.margin,
                       self.square_length,
                       self.square_length])
 
