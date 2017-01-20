@@ -1,7 +1,8 @@
 '''
-Calib_Grid
-------------------
-This is an environment for collecting calibration data for the grid navigation task. If offers a simplified version of the 
+TODO
+----
+  - Expand the number of possible actions to 8 (NE, SE, NW, SW)
+
 '''
 
 
@@ -10,10 +11,8 @@ import pygame
 import random
 import time
 import numpy as np
-import sys
 from pylsl import StreamInlet, StreamOutlet,StreamInfo,resolve_stream
-import vis_data
-
+from pygame.locals import *
 # COLOR
 BLACK = (0,0,0)
 WHITE = (255,255,255)
@@ -23,14 +22,18 @@ RED = (255, 0, 0)
 # screen
 WIDTH = 1000
 HEIGHT = 1000
+MARGIN = 30
+square_length = 100
 
 # Learning
 GAMMA = .2
 
-class CalibGrid():
+class CalibNavigate():
 
   def __init__(self):
-
+    self.dim=3
+    self.margin=10
+    self.square_length=100
     #
     # PYGAME
     # ------
@@ -38,39 +41,22 @@ class CalibGrid():
 
     self.screen = pygame.display.set_mode([600, 600])
     self.clock = pygame.time.Clock()
-    pygame.display.set_caption("TRAINING")
-    self.square_length = 100
-    self.margin = 10
-    #
-    # LABSTREAMINGLAYER
-    # -------
-    # Set up communication with NeuroPype
-    #
-    # Input Stream:
-    #      name = 'error_feedback'
-    #      Accepts feedback from NeuroPype regarding whether an error potential was
-    #      detected after the agent performed an action
-    # Output Stream
-    #      name = 'action_stream'
-    #      Sends a marker to NeuroPype when an action has been performed by the agent.
-    #      This tells NeuroPype to look for feedback on that particular action
 
-    # LSL setup
+    pygame.display.set_caption("Navigation Task")
     info_correct = StreamInfo('correctness','Markers',1, 0,'string','markerstream2')
     self.outlet_correct = StreamOutlet(info_correct)
     self.markers = ['Correct','Incorrect']
 
+
     #
     # AGENT
     # ------
-    # The action space consists of 4 directions of movement: North, East, South, West
+    # The action space consists of 4 directions of movement: Up, Down, Left, Right
     # These four actions are stored in the self.actions list as a tuple containing
     # the direction to move (in the form of (x,y) change in coordinates) and the 
     # probability of selecting this action. i.e.: [(dx,dy), probability]
-    # The training probabilities are set to .25
+    # The initial probabilities are set to .25
 
-    init_prob = .25
-    print(init_prob)
     self.actions = [
         (0,-1),   #North
         (1,0),    #East
@@ -80,7 +66,6 @@ class CalibGrid():
 
     # Initialize the task
     pygame.init()
-    pygame.transform.scale(self.screen, (400,400))
     self.run_loop()
 
   def run_loop(self):
@@ -93,20 +78,20 @@ class CalibGrid():
 
     '''
     num_trials = 100
-    agent_pos = (1,1)    # initial coordinates of the agent (x,y)
-
-    # MAIN LOOP
+    agent_pos = (1,1) 
     for i in range(num_trials):
-      # CREATE GRID
+      print(i)
+      pygame.event.get() 
+        # CREATE GRID
       correct_idx = random.randint(0,3)
       self.draw_grid(correct_idx)
-      time.sleep(2)
+      pygame.time.wait(2000)
 
       # SELECT MOVE
       p = [.1,.1,.1,.1]
       p[correct_idx] = .70
-      action_idx = np.random.choice(4,1,p=p)
-      # action_idx = random.randint(0,3)
+      action_idx = np.random.choice(4,1,p=p)[0]
+      print(action_idx)
       action = self.actions[action_idx]
 
       # MOVE AGENT
@@ -120,15 +105,14 @@ class CalibGrid():
         self.outlet_correct.push_sample(['Correct'])
       else:
         self.outlet_correct.push_sample(['Incorrect'])
-      
 
       # PAUSE BEFORE NEXT LOOP
-      time.sleep(2)
+      pygame.time.wait(2000)
       self.draw_square(1+action[0],1+action[1],WHITE)
       self.draw_target(correct_idx,erase=True)
       pygame.display.flip()
-      time.sleep(1)
-
+      pygame.time.wait(1000)
+      clock.tick(60)
 
   def draw_grid(self,correct_idx):
     for row in range(3):
@@ -155,7 +139,6 @@ class CalibGrid():
     pygame.draw.rect(self.screen,
                      color,
                       directions[dir_idx])
-
   def draw_square(self,x,y,color):
     pygame.draw.rect(self.screen,
                      color,
@@ -163,11 +146,8 @@ class CalibGrid():
                       100+(self.margin + self.square_length) * y + self.margin,
                       self.square_length,
                       self.square_length])
-
-
-
 if __name__ == '__main__':
-  gn = CalibGrid()
+  gn = CalibNavigate()
   
 
 
