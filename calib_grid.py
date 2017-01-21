@@ -12,7 +12,7 @@ import random
 import time
 import numpy as np
 from pylsl import StreamInlet, StreamOutlet,StreamInfo,resolve_stream
-from pygame.locals import *
+import os
 # COLOR
 BLACK = (0,0,0)
 WHITE = (255,255,255)
@@ -31,15 +31,17 @@ GAMMA = .2
 class CalibNavigate():
 
   def __init__(self):
-    self.dim=3
     self.margin=10
     self.square_length=100
+
+
+    os.environ['SDL_VIDEO_CENTERED'] = '1'
     #
     # PYGAME
     # ------
     # Set up the window, screen, and clock
 
-    self.screen = pygame.display.set_mode([600, 600])
+    self.screen = pygame.display.set_mode([1000, 1000])
     self.clock = pygame.time.Clock()
 
     pygame.display.set_caption("Navigation Task")
@@ -56,11 +58,9 @@ class CalibNavigate():
     # the direction to move (in the form of (x,y) change in coordinates) and the 
     # probability of selecting this action. i.e.: [(dx,dy), probability]
     # The initial probabilities are set to .25
-
+    pygame.time.wait(5000)
     self.actions = [
-        (0,-1),   #North
         (1,0),    #East
-        (0,1),    #South
         (-1,0)    #West
      ]
 
@@ -77,27 +77,25 @@ class CalibNavigate():
     The loop continues to update the screen until the agent reaches the goal.
 
     '''
-    num_trials = 100
+    num_trials = 350
     agent_pos = (1,1) 
     for i in range(num_trials):
       print(i)
       pygame.event.get() 
-        # CREATE GRID
-      correct_idx = random.randint(0,3)
+      # CREATE GRID
+      correct_idx = random.randint(0,1)
       self.draw_grid(correct_idx)
       pygame.time.wait(2000)
 
       # SELECT MOVE
-      p = [.1,.1,.1,.1]
-      p[correct_idx] = .70
-      action_idx = np.random.choice(4,1,p=p)[0]
-      print(action_idx)
+      p = [.2,.2]
+      p[correct_idx] = .80
+      action_idx = np.random.choice(2,1,p=p)[0]
       action = self.actions[action_idx]
 
       # MOVE AGENT
-      print(action)
-      self.draw_square(1,1,WHITE)
-      self.draw_square(1+action[0],1+action[1],RED)
+      self.draw_square(2,1,WHITE)
+      self.draw_square(2+action[0],1,RED)
 
       pygame.display.flip()
       # SEND MARKER
@@ -108,42 +106,48 @@ class CalibNavigate():
 
       # PAUSE BEFORE NEXT LOOP
       pygame.time.wait(2000)
-      self.draw_square(1+action[0],1+action[1],WHITE)
+      self.draw_square(2+action[0],1,WHITE)
       self.draw_target(correct_idx,erase=True)
       pygame.display.flip()
       pygame.time.wait(1000)
-      clock.tick(60)
 
   def draw_grid(self,correct_idx):
-    for row in range(3):
-      for column in range(3):
-          self.draw_square(column,row,WHITE)
+    # self.draw_square(0,1,BLACK)
+    for column in range(0,5):
+        if correct_idx == 0 and column==4:
+          self.draw_square(column,1,GREEN)
+          # self.draw_square(0,1,BLACK)
+          print('test1')
+        elif correct_idx==1 and column==0:
+          self.draw_square(column,1,GREEN)
+          self.draw_square(3,1,BLACK)
+          print('test2')
+        elif column>0 or column<4:
+          self.draw_square(column,1,WHITE)
+      
 
     # INSERT AGENT
-    self.draw_square(1,1,RED)
-    self.draw_target(correct_idx)
+    self.draw_square(2,1,RED)
 
     # DRAW CURRENT SCREEN
     pygame.display.flip()
   
   def draw_target(self,dir_idx,erase=False):
-    NORTH = [135,25,320,75]
-    EAST = [465,110,75,320]
-    SOUTH = [135,440,320,75]
-    WEST = [50,110,75,320]
-    directions = [NORTH,EAST,SOUTH,WEST]
+    if dir_idx==0:
+      column=4
+    else:
+      column=0
     if not erase:
       color = GREEN
     else:
-      color = BLACK
-    pygame.draw.rect(self.screen,
-                     color,
-                      directions[dir_idx])
+      color = WHITE
+    self.draw_square(column,1,color)
+
   def draw_square(self,x,y,color):
     pygame.draw.rect(self.screen,
                      color,
-                     [125+(self.margin + self.square_length) * x + self.margin,
-                      100+(self.margin + self.square_length) * y + self.margin,
+                     [225+(self.margin + self.square_length) * x + self.margin,
+                      300+(self.margin + self.square_length) * y + self.margin,
                       self.square_length,
                       self.square_length])
 if __name__ == '__main__':
