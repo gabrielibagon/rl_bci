@@ -2,7 +2,8 @@
 cd ~; cd eeglab13_6_5b/;
 [ALLEEG EEG CURRENTSET ALLCOM] = eeglab;
 %Import XDF File
-FILE = '/home/ibagon/Documents/Research/RL_BCI/data/calib_long4.xdf'
+filename = 'new3'
+FILE = ['/home/ibagon/Documents/Research/RL_BCI/data/' filename '/' filename '.xdf']
 EEG = pop_loadxdf(FILE , 'streamname', 'openbci_eeg', 'streamtype', 'EEG', 'exclude_markerstreams', {});
 [ALLEEG EEG CURRENTSET] = pop_newset(ALLEEG, EEG, 0,'setname','raw','gui','off'); 
 EEG = eeg_checkset( EEG );
@@ -28,7 +29,7 @@ end
 num_total = num_correct + num_incorrect;
 
 %Subsample Correct epochs
-subsample_size = 3 * (num_incorrect);
+subsample_size = 4 * (num_incorrect);
 removed=[];
 while length(removed) < subsample_size
 	idx = randi(num_total);
@@ -39,7 +40,7 @@ end
 
 EEG = pop_rejepoch( EEG,removed,0);
 [ALLEEG EEG CURRENTSET] = pop_newset(ALLEEG, EEG, 2,'setname','subsampled','gui','off'); 
-EEG = pop_saveset( EEG, 'filename','subsampled.set','filepath','/home/ibagon/Documents/Research/RL_BCI/data/');
+EEG = pop_saveset( EEG, 'filename','subsampled.set','filepath',['/home/ibagon/Documents/Research/RL_BCI/data/' filename '/' filename '-subsampled.xdf');
 [ALLEEG EEG] = eeg_store(ALLEEG, EEG, CURRENTSET);
 
 
