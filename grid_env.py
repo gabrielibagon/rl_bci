@@ -1,7 +1,7 @@
 '''
 TODO
 ----
-  - Expand the number of possible actions to 8 (NE, SE, NW, SW)
+
 
 '''
 
@@ -11,7 +11,9 @@ import pygame
 import random
 import time
 import numpy as np
+import sys
 from pylsl import StreamInlet, StreamOutlet,StreamInfo,resolve_stream
+import vis_data
 
 # COLOR
 BLACK = (0,0,0)
@@ -22,8 +24,6 @@ RED = (255, 0, 0)
 # screen
 WIDTH = 1000
 HEIGHT = 1000
-MARGIN = 30
-square_length = 100
 
 # Learning
 GAMMA = .2
@@ -41,7 +41,8 @@ class GridNavigate():
     self.screen = pygame.display.set_mode([WIDTH, HEIGHT])
     self.clock = pygame.time.Clock()
     pygame.display.set_caption("Navigation Task")
-
+    self.square_length = 800/self.dim
+    self.margin = 100/self.dim
     #
     # LABSTREAMINGLAYER
     # -------
@@ -85,7 +86,6 @@ class GridNavigate():
         [(-1,-1), init_prob]  #NorthWest
      ]
 
-    self.vector = [0.0]
     # Initialize the task
     pygame.init()
     self.run_loop()
@@ -151,6 +151,10 @@ class GridNavigate():
       if agent_pos == goal_pos:
         print("DONE")
         DONE = True
+        lines = []
+        for action in self.actions:
+          lines.append(action[1])
+        vis_data.vector(lines)
         break
       # UPDATE AGENT POSITION
       pos_t0 = agent_pos
@@ -189,7 +193,7 @@ class GridNavigate():
          This is to allow fine tuning of actions as the object moves closer to its target.
 
     '''
-    effect = .15
+    effect = .1 / self.dim
     n = .5
     #print(idx_action)
     if feedback == 'correct':
@@ -244,7 +248,7 @@ class GridNavigate():
     weighted_decision = []
     # weight random selection
     for element in decision:
-      weighted_decision += [element[0]] * int(element[1] * 100)
+      weighted_decision += [element[0]] * int(element[1] * 1000)
     choice = random.choice(weighted_decision)
     
     agent_pos = (agent_pos[0] + choice[0], agent_pos[1] + choice[1])
@@ -259,15 +263,18 @@ class GridNavigate():
   def draw_square(self,x,y,color):
     pygame.draw.rect(self.screen,
                      color,
-                     [(MARGIN + square_length) * x + MARGIN,
-                      (MARGIN + square_length) * y + MARGIN,
-                      square_length,
-                      square_length])
+                     [(self.margin + self.square_length) * x + self.margin,
+                      (self.margin + self.square_length) * y + self.margin,
+                      self.square_length,
+                      self.square_length])
 
 
 
 if __name__ == '__main__':
-  gn = GridNavigate(6)
+  nd = 6
+  if len(sys.argv) > 1:
+    nd = int(sys.argv[1])
+  gn = GridNavigate(nd)
   
 
 

@@ -96,14 +96,14 @@ class CalibNavigate():
       # MOVE AGENT
       self.draw_square(2,1,WHITE)
       self.draw_square(2+action[0],1,RED)
-
+      print(self.clock.tick())
       pygame.display.flip()
       # SEND MARKER
       if action_idx == correct_idx:
         self.outlet_correct.push_sample(['Correct'])
       else:
         self.outlet_correct.push_sample(['Incorrect'])
-
+      print("Woop",self.clock.tick())
       # PAUSE BEFORE NEXT LOOP
       pygame.time.wait(1000)
       self.draw_square(2+action[0],1,WHITE)
