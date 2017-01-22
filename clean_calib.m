@@ -1,7 +1,7 @@
 %Intiailize EEGLAB
 cd ~; cd eeglab13_6_5b/;
 [ALLEEG EEG CURRENTSET ALLCOM] = eeglab;
-filename = 'new2'
+filename = 'new3'
 channel_idx = [1 2 3 4 5 6 7 8];
 %Import XDF File
 FILE = ['/home/ibagon/Documents/Research/RL_BCI/data/' filename '/' filename '.xdf'];
@@ -39,7 +39,6 @@ end
 end
 num_total = num_correct + num_incorrect;
 
-%Subsample Correct epochs
 subsample_size = 4 * (num_incorrect);
 removed=[];
 while length(removed) < subsample_size
@@ -52,11 +51,7 @@ end
 % Save processed set for calibration
 EEG = pop_rejepoch( EEG,removed,0);
 [ALLEEG EEG CURRENTSET] = pop_newset(ALLEEG, EEG, 2,'setname','subsampled','gui','off'); 
-<<<<<<< Updated upstream
-EEG = pop_saveset( EEG, 'filename','subsampled.set','filepath',['/home/ibagon/Documents/Research/RL_BCI/data/' filename '/' filename '-subsampled.xdf');
-=======
-EEG = pop_saveset( EEG, 'filename',filename,'filepath',['/home/ibagon/Documents/Research/RL_BCI/data/' filename '/']);
->>>>>>> Stashed changes
+EEG = pop_saveset( EEG, 'filename',[filename '-subsampled.set'],'filepath',['/home/ibagon/Documents/Research/RL_BCI/data/' filename '/']);
 [ALLEEG EEG] = eeg_store(ALLEEG, EEG, CURRENTSET);
 display(indelec)
 
@@ -81,6 +76,19 @@ figure; pop_erpimage(EEG,1, channel_idx,[[]],'Incorrect ERP Image',10,1,{ 'Incor
 print(['/home/ibagon/Documents/Research/RL_BCI/data/' filename '/Incorrect-ERPImage'],'-dpng')
 figure; pop_erpimage(EEG,1, channel_idx,[[]],'Correct ERP Image',10,1,{ 'Correct'},[],'type' ,'yerplabel','\muV','erp','on','cbar','on','topo', { [] EEG.chanlocs EEG.chaninfo } )
 print(['/home/ibagon/Documents/Research/RL_BCI/data/' filename '/Correct-ERPImage'],'-dpng')
+EEG = eeg_checkset( EEG );
+EEG = pop_selectevent( EEG, 'type',{'Incorrect'},'deleteevents','off','deleteepochs','on','invertepochs','off');
+[ALLEEG EEG CURRENTSET] = pop_newset(ALLEEG, EEG, 4,'setname','Incorrect','gui','off'); 
+EEG = eeg_checkset( EEG );
+figure; pop_plottopo(EEG, [1:7] , 'Incorrect', 0, 'ydir',1);
+print(['/home/ibagon/Documents/Research/RL_BCI/data/' filename '/Incorrect-Topo'],'-dpng')
+EEG = eeg_checkset( EEG );
+figure; pop_timtopo(EEG, [-200  796], [300], 'ERP data and scalp maps of Incorrect');
+print(['/home/ibagon/Documents/Research/RL_BCI/data/' filename '/Incorrect-TimTopo'],'-dpng')
+
+
+
+
 
 
 
