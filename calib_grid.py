@@ -105,11 +105,11 @@ class CalibNavigate():
         self.outlet_correct.push_sample(['Incorrect'])
 
       # PAUSE BEFORE NEXT LOOP
-      pygame.time.wait(2000)
+      pygame.time.wait(1000)
       self.draw_square(2+action[0],1,WHITE)
       self.draw_target(correct_idx,erase=True)
       pygame.display.flip()
-      pygame.time.wait(1000)
+      pygame.time.wait(500)
 
   def draw_grid(self,correct_idx):
     # self.draw_square(0,1,BLACK)
