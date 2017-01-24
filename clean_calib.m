@@ -1,7 +1,7 @@
 %Intiailize EEGLAB
 cd ~; cd eeglab13_6_5b/;
 [ALLEEG EEG CURRENTSET ALLCOM] = eeglab;
-filename = 'new3'
+filename = 'new1'
 channel_idx = [1 2 3 4 5 6 7 8];
 %Import XDF File
 FILE = ['/home/ibagon/Documents/Research/RL_BCI/data/' filename '/' filename '.xdf'];
@@ -18,9 +18,16 @@ EEG = eeg_checkset( EEG );
 display(channel_idx)
 channel_idx = channel_idx(1:length(channel_idx)-length(indelec))
 display(channel_idx)
-
-
-
+% 
+% % Filter set (Bandpass 1-15)
+EEG = pop_eegfiltnew(EEG, [], 2, 826, true, [], 0);
+[ALLEEG EEG CURRENTSET] = pop_newset(ALLEEG, EEG, 1,'setname','filtered','gui','off'); 
+EEG = pop_eegfiltnew(EEG, [], 15, 220, 0, [], 0);
+[ALLEEG EEG CURRENTSET] = pop_newset(ALLEEG, EEG, 2,'overwrite','on','gui','off'); 
+EEG = eeg_checkset( EEG );
+% % % 
+% % % % 
+% % % % 
 % Extract Epochs
 EEG = pop_epoch( EEG, {  'Correct'  'Incorrect'  }, [-0.2 0.8], 'newname', 'raw epochs', 'epochinfo', 'yes');
 [ALLEEG EEG CURRENTSET] = pop_newset(ALLEEG, EEG, 2,'gui','off'); 
@@ -55,15 +62,6 @@ EEG = pop_saveset( EEG, 'filename',[filename '-subsampled.set'],'filepath',['/ho
 [ALLEEG EEG] = eeg_store(ALLEEG, EEG, CURRENTSET);
 display(indelec)
 
-% Prepare set for visualization
-
-% Filter set (Bandpass 1-15)
-EEG = pop_eegfiltnew(EEG, [], 1, 826, true, [], 0);
-[ALLEEG EEG CURRENTSET] = pop_newset(ALLEEG, EEG, 3,'setname','filtered','gui','off'); 
-EEG = pop_eegfiltnew(EEG, [], 15, 220, 0, [], 0);
-[ALLEEG EEG CURRENTSET] = pop_newset(ALLEEG, EEG, 4,'overwrite','on','gui','off'); 
-EEG = eeg_checkset( EEG );
-
 %Time Series
 [EEG ALLEEG CURRENTSET] = eeg_retrieve(ALLEEG,4);
 EEG = eeg_checkset( EEG );
@@ -85,10 +83,10 @@ print(['/home/ibagon/Documents/Research/RL_BCI/data/' filename '/Incorrect-Topo'
 EEG = eeg_checkset( EEG );
 figure; pop_timtopo(EEG, [-200  796], [300], 'ERP data and scalp maps of Incorrect');
 print(['/home/ibagon/Documents/Research/RL_BCI/data/' filename '/Incorrect-TimTopo'],'-dpng')
-
-
-
-
-
-
-
+% 
+% 
+% 
+% 
+% 
+% 
+% 
