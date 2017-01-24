@@ -1,16 +1,28 @@
 %Intiailize EEGLAB
 cd ~; cd eeglab13_6_5b/;
 [ALLEEG EEG CURRENTSET ALLCOM] = eeglab;
+filename = 'new2'
+channel_idx = [1 2 3 4 5 6 7 8];
 %Import XDF File
-FILE = '/home/ibagon/Documents/Research/RL_BCI/data/calib_long4.xdf'
+FILE = ['/home/ibagon/Documents/Research/RL_BCI/data/' filename '/' filename '.xdf'];
 EEG = pop_loadxdf(FILE , 'streamname', 'openbci_eeg', 'streamtype', 'EEG', 'exclude_markerstreams', {});
 [ALLEEG EEG CURRENTSET] = pop_newset(ALLEEG, EEG, 0,'setname','raw','gui','off'); 
 EEG = eeg_checkset( EEG );
+[EEG ALLEEG CURRENTSET] = eeg_retrieve(ALLEEG,1);
+EEG=pop_chanedit(EEG, 'lookup','/home/ibagon/eeglab13_6_5b/plugins/dipfit2.3/standard_BESA/standard-10-5-cap385.elp');
+[ALLEEG EEG] = eeg_store(ALLEEG, EEG, CURRENTSET);
+
 % Reject Channels
-[EEG, indelec, measure, com] = pop_rejchan(EEG, 'elec',[1:16] ,'threshold',5,'norm','on','measure','kurt');
+[EEG, indelec, measure, com] = pop_rejchan(EEG, 'elec',[1:8] ,'threshold',5,'norm','on','measure','kurt');
 EEG = eeg_checkset( EEG );
+display(channel_idx)
+channel_idx = channel_idx(1:length(channel_idx)-length(indelec))
+display(channel_idx)
+
+
+
 % Extract Epochs
-EEG = pop_epoch( EEG, {  'Correct'  'Incorrect'  }, [-0.2         0.8], 'newname', 'raw epochs', 'epochinfo', 'yes');
+EEG = pop_epoch( EEG, {  'Correct'  'Incorrect'  }, [-0.2 0.8], 'newname', 'raw epochs', 'epochinfo', 'yes');
 [ALLEEG EEG CURRENTSET] = pop_newset(ALLEEG, EEG, 2,'gui','off'); 
 EEG = eeg_checkset( EEG );
 
@@ -28,7 +40,7 @@ end
 num_total = num_correct + num_incorrect;
 
 %Subsample Correct epochs
-subsample_size = 3 * (num_incorrect);
+subsample_size = 4 * (num_incorrect);
 removed=[];
 while length(removed) < subsample_size
 	idx = randi(num_total);
@@ -37,9 +49,38 @@ while length(removed) < subsample_size
 	end
 end
 
+% Save processed set for calibration
 EEG = pop_rejepoch( EEG,removed,0);
 [ALLEEG EEG CURRENTSET] = pop_newset(ALLEEG, EEG, 2,'setname','subsampled','gui','off'); 
-EEG = pop_saveset( EEG, 'filename','subsampled.set','filepath','/home/ibagon/Documents/Research/RL_BCI/data/');
+<<<<<<< Updated upstream
+EEG = pop_saveset( EEG, 'filename','subsampled.set','filepath',['/home/ibagon/Documents/Research/RL_BCI/data/' filename '/' filename '-subsampled.xdf');
+=======
+EEG = pop_saveset( EEG, 'filename',filename,'filepath',['/home/ibagon/Documents/Research/RL_BCI/data/' filename '/']);
+>>>>>>> Stashed changes
 [ALLEEG EEG] = eeg_store(ALLEEG, EEG, CURRENTSET);
+display(indelec)
+
+% Prepare set for visualization
+
+% Filter set (Bandpass 1-15)
+EEG = pop_eegfiltnew(EEG, [], 1, 826, true, [], 0);
+[ALLEEG EEG CURRENTSET] = pop_newset(ALLEEG, EEG, 3,'setname','filtered','gui','off'); 
+EEG = pop_eegfiltnew(EEG, [], 15, 220, 0, [], 0);
+[ALLEEG EEG CURRENTSET] = pop_newset(ALLEEG, EEG, 4,'overwrite','on','gui','off'); 
+EEG = eeg_checkset( EEG );
+
+%Time Series
+[EEG ALLEEG CURRENTSET] = eeg_retrieve(ALLEEG,4);
+EEG = eeg_checkset( EEG );
+pop_eegplot( EEG, 1, 1, 1);
+
+% Plot ERP Image
+[EEG ALLEEG CURRENTSET] = eeg_retrieve(ALLEEG,4);
+EEG = eeg_checkset( EEG );
+figure; pop_erpimage(EEG,1, channel_idx,[[]],'Incorrect ERP Image',10,1,{ 'Incorrect'},[],'type' ,'yerplabel','\muV','erp','on','cbar','on','topo', { [] EEG.chanlocs EEG.chaninfo } )
+print(['/home/ibagon/Documents/Research/RL_BCI/data/' filename '/Incorrect-ERPImage'],'-dpng')
+figure; pop_erpimage(EEG,1, channel_idx,[[]],'Correct ERP Image',10,1,{ 'Correct'},[],'type' ,'yerplabel','\muV','erp','on','cbar','on','topo', { [] EEG.chanlocs EEG.chaninfo } )
+print(['/home/ibagon/Documents/Research/RL_BCI/data/' filename '/Correct-ERPImage'],'-dpng')
+
 
 
